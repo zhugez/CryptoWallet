@@ -10,6 +10,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+
 origins = [
     "*",
     "http://localhost:3000",  # React frontend

@@ -6,12 +6,10 @@ from fastapi import HTTPException, status
 from app.models import Wallet
 from app.schemas import (
     WalletCreateResponse,
-    DeleteWalletResponse,
     WalletResponse,
     WalletBalanceResponse,
 )
 from web3 import Web3
-import hashlib
 
 async def get_wallets(
     db: AsyncSession, skip: int = 0, limit: int = 10
@@ -28,92 +26,72 @@ async def get_wallets(
     wallets = result.scalars().all()
     return [WalletResponse.from_orm(wallet) for wallet in wallets]
 
-async def custom_generate_address(public_key: str) -> str: 
-    keccak_hash = hashlib.new('sha3_256', bytes.fromhex(public_key[2:])).digest()
+# Helper function to get wallet by ID
+async def fetch_wallet_by_id(db: AsyncSession, wallet_id: int) -> Wallet:
+    result = await db.execute(select(Wallet).where(Wallet.id == wallet_id))
+    wallet = result.scalar_one_or_none()
+    if not wallet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found"
+        )
+    return wallet
 
-    address = '0x' + keccak_hash[-20:].hex()
-    return address
-
-async def generate_ethereum_wallet():
+async def generate_ethereum_wallet() -> dict:
     """
     Generate a new Ethereum wallet with address and private key.
     """
-    account = Web3().eth.account.create()
-    address = await custom_generate_address(account.address)
-    return {"address": address, "private_key": account.key.hex()}
+    try:
+        w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
+        account = w3.eth.account.create()
+        admin_wallet = w3.eth.accounts[0]
+        admin_wallet_priv = "0x95d20a8a0bf1a31ec9cf500b8f0f85dde0d4f18e9ec26fb6fe5e474f9adec7f7"
+        amount = 0.1
+        transaction = {
+            "to": account.address,
+            "value": w3.to_wei(amount, "ether"),
+            "gas": 2000000,
+            "gasPrice": w3.to_wei("50", "gwei"),
+            "nonce": w3.eth.get_transaction_count(admin_wallet),
+        }
+        signed_txn = w3.eth.account.sign_transaction(transaction, admin_wallet_priv)
+        txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
+        return {
+            "address": account.address,
+            "private_key": account.key.hex(),
+            "balance": w3.eth.get_balance(account.address)*10**-18,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 async def create_wallet_in_db(db: AsyncSession, user_id: int) -> WalletCreateResponse:
     wallet_data = await generate_ethereum_wallet()
     new_wallet = Wallet(
         user_id=user_id,
         address=wallet_data["address"],
         private_key=wallet_data["private_key"],  # Secure storage required
-        balance=100.0,
+        balance=wallet_data["balance"],
     )
     db.add(new_wallet)
     await db.commit()
     await db.refresh(new_wallet)
 
     # Check if wallet is created
-    result = await db.execute(select(Wallet).where(Wallet.id == new_wallet.id))
-    wallet = result.scalar_one_or_none()
-    if not wallet:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Wallet not created"
-        )
+    wallet = await fetch_wallet_by_id(db, new_wallet.id)
+    return WalletCreateResponse.from_orm(wallet)
 
-    return WalletCreateResponse.from_orm(new_wallet)
-
-
-async def get_wallet_by_id(db: AsyncSession, wallet_id: int):
+async def get_wallet_by_id(db: AsyncSession, wallet_id: int) -> WalletResponse:
     """
     Retrieve wallet details by ID.
     """
-    result = await db.execute(select(Wallet).where(Wallet.id == wallet_id))
-    wallet = result.scalar_one_or_none()
-
-    if not wallet:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found"
-        )
-
-    return WalletResponse(
-        id=wallet.id,
-        user_id=wallet.user_id,
-        address=wallet.address,
-        balance=wallet.balance,
-        created_at=wallet.created_at,
-    )
+    wallet = await fetch_wallet_by_id(db, wallet_id)
+    return WalletResponse.from_orm(wallet)
 
 
-async def delete_wallet(db: AsyncSession, wallet_id: int) -> DeleteWalletResponse:
-    """
-    Delete a wallet by ID.
-    """
-    result = await db.execute(select(Wallet).where(Wallet.id == wallet_id))
-    wallet = result.scalar_one_or_none()
-
-    if not wallet:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found"
-        )
-
-    await db.execute(delete(Wallet).where(Wallet.id == wallet_id))
-    await db.commit()
-
-    return DeleteWalletResponse(detail="Wallet deleted successfully")
-
-
-async def get_wallet_balance(db: AsyncSession, wallet_id: int):
+async def get_wallet_balance(db: AsyncSession, wallet_id: int) -> WalletBalanceResponse:
     """
     Retrieve wallet balance by ID.
     """
-    result = await db.execute(select(Wallet).where(Wallet.id == wallet_id))
-    wallet = result.scalar_one_or_none()
-
-    if not wallet:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found"
-        )
-
+    wallet = await fetch_wallet_by_id(db, wallet_id)
     return WalletBalanceResponse(wallet_id=wallet.id, balance=wallet.balance)

@@ -21,9 +21,9 @@ const CreateTransaction = () => {
   const [formData, setFormData] = useState({
     wallet_id: '',
     amount: '',
-    transaction_type: 'withdraw' as 'withdraw' | 'deposit' | 'transfer', // Add 'transfer' type
+    transaction_type: 'send',
     recipient: '',
-    private_key: '', // Rename private key field
+    private_key: '',
   });
 
   useEffect(() => {
@@ -59,10 +59,6 @@ const CreateTransaction = () => {
       setIsLoadingWallets(false);
     }
   };
-
-  useEffect(() => {
-    fetchWallets();
-  }, []);
 
   const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -156,24 +152,9 @@ const CreateTransaction = () => {
                     required
                   />
                 </div>
+                {/* Transaction Type select component removed */}
                 <div>
-                  <label className="text-gray-400 mb-2 block">Transaction Type</label>
-                  <Select
-                    value={formData.transaction_type}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, transaction_type: value as 'withdraw' | 'deposit' | 'transfer' }))}
-                  >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="withdraw">Withdraw</SelectItem>
-                      <SelectItem value="deposit">Deposit</SelectItem>
-                      <SelectItem value="transfer">Transfer</SelectItem> {/* Add Transfer option */}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-gray-400 mb-2 block">Recipient (Optional)</label>
+                  <label className="text-gray-400 mb-2 block">Recipient</label>
                   <Input
                     type="text"
                     value={formData.recipient}

@@ -11,7 +11,6 @@ from app.schemas import (
 from app.crud.wallet import (
     get_wallets,
     create_wallet_in_db,
-    delete_wallet,
     get_wallet_by_id,
     get_wallet_balance,
 )
@@ -54,10 +53,6 @@ async def get_wallet_by_id_route(wallet_id: int, db: AsyncSession = Depends(get_
         created_at=wallet.created_at,
     )
 
-
-@router.delete("/{wallet_id}", response_model=DeleteWalletResponse)
-async def delete_wallet_route(wallet_id: int, db: AsyncSession = Depends(get_db)):
-    return await delete_wallet(db, wallet_id)
 
 
 @router.get("/{wallet_id}/balance", response_model=WalletBalanceResponse)

@@ -20,29 +20,25 @@ class User(Base):
 class Wallet(Base):
     __tablename__ = "wallets"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     address = Column(String, unique=True, nullable=False)
     private_key = Column(String, nullable=False)
     balance = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
     transactions = relationship("Transaction", back_populates="wallet")
 
-
-class TransactionType(Enum):
-    DEPOSIT = "deposit"
-    WITHDRAW = "withdraw"
-    TRANSFER = "transfer"
-
-
 class Transaction(Base):
-    __tablename__ = "transactions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    wallet_id = Column(Integer, ForeignKey("wallets.id"), nullable=False)
-    transaction_type = Column(String, nullable=False)
+    __tablename__ = 'transactions'
+    
+    id = Column(String, primary_key=True)
+    wallet_id = Column(Integer, ForeignKey('wallets.id'))  # Changed to Integer to match Wallet.id
+    from_wallet = Column(String(255), nullable=False)  # Added length constraint
+    recipient = Column(String(255), nullable=False)    # Added length constraint
+    status = Column(String(50), nullable=False)        # Added length constraint
+    transaction_type = Column(String(50), nullable=False)  # Added length constraint
     amount = Column(Float, nullable=False)
-    recipient = Column(String, nullable=True)  # Optional for transfers
-    status = Column(String, nullable=False, default="pending")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, nullable=False)
 
     wallet = relationship("Wallet", back_populates="transactions")
+    # Removed duplicate wallet_id column definition

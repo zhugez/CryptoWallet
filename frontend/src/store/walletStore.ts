@@ -11,6 +11,7 @@ interface WalletState {
   loadWallets: () => Promise<void>;
   setCurrentPage: (page: number) => void;
   setCopiedAddress: (address: string) => void;
+  setWallets: (wallets: WalletInfo[]) => void;
 }
 
 export const useWalletStore = create<WalletState>((set) => ({
@@ -32,4 +33,5 @@ export const useWalletStore = create<WalletState>((set) => ({
   },
   setCurrentPage: (page: number) => set({ currentPage: page }),
   setCopiedAddress: (address: string) => set({ copiedAddress: address }),
+  setWallets: (wallets) => set({ wallets }),
 }));

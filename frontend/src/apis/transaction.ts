@@ -36,7 +36,7 @@ interface CreateTransactionPayload {
   user_id: number;
   wallet_id: number;
   amount: number;
-  transaction_type: 'withdraw' | 'deposit' | 'transfer';
+  transaction_type: 'send';
   recipient?: string;
   privateKey: string;
 }

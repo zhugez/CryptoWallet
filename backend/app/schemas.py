@@ -74,9 +74,8 @@ class DeleteWalletResponse(BaseModel):
 
 
 class TransactionType(str, Enum):
-    DEPOSIT = "deposit"
-    WITHDRAW = "withdraw"
-    TRANSFER = "transfer"
+    SEND = "send"
+    RECEIVE = "receive"
 class TransactionCreate(BaseModel):
     wallet_id: int
     amount: float
