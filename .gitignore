@@ -1,8 +1,17 @@
+# Dependencies
 /node_modules
+./frontend/node_modules
+
+# Build outputs
 /dist
 
+# Database
+/backend/wallet.db
+
+# Python
+/.venv
+__pycache__/
+*.pyc
+
+# Environment variables
 .env
-pycache*
-*.pycs
-./frontend/node_modules 
-/node_modules
