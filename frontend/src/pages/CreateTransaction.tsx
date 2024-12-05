@@ -10,55 +10,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/utils/enums';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Wallet } from '@/types/wallet';
+import { useWalletStore } from '@/store/walletStore';
 
 const CreateTransaction = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [isLoadingWallets, setIsLoadingWallets] = useState(false);
   const [formData, setFormData] = useState({
     wallet_id: '',
     amount: '',
-    transaction_type: 'send',
+    transaction_type: 'send' as const, // Type assertion to match the required type
     recipient: '',
-    private_key: '',
+    privateKey: '', // Changed from private_key to match the interface
   });
+
+  const { wallets, isLoading: isLoadingWallets, error, fetchWallets } = useWalletStore(
+    (state) => ({
+      wallets: state.wallets,
+      isLoading: state.isLoading,
+      error: state.error,
+      fetchWallets: state.fetchWallets,
+    })
+  );
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      navigate(PATHS.LOGIN); // Redirect to login page if token is missing
-    } else {
-      fetchWallets();
+      navigate(PATHS.LOGIN);
+      return;
     }
+    fetchWallets();
   }, [navigate]);
 
-  const fetchWallets = async () => {
-    setIsLoadingWallets(true);
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://127.0.0.1:8000/api/wallets', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      setWallets(data);
-
-      // Set first wallet as default if available
-      if (data.length > 0) {
-        setFormData(prev => ({ ...prev, wallet_id: data[0].id.toString() }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch wallets:', error);
-      toast(toastConfig.error('Failed to fetch wallets'));
-    } finally {
-      setIsLoadingWallets(false);
+  useEffect(() => {
+    if (wallets.length > 0) {
+      setFormData(prev => ({ ...prev, wallet_id: wallets[0].id.toString() }));
     }
-  };
+  }, [wallets]);
 
   const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -67,7 +55,7 @@ const CreateTransaction = () => {
 
   const handlePrivateKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setFormData(prev => ({ ...prev, private_key: value }));
+    setFormData(prev => ({ ...prev, privateKey: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,19 +64,16 @@ const CreateTransaction = () => {
     try {
       const user_id = 1; // Get this from your auth context
       const transactionData = {
-        ...formData,
         user_id,
         wallet_id: parseInt(formData.wallet_id),
         amount: parseFloat(formData.amount),
+        transaction_type: formData.transaction_type,
+        recipient: formData.recipient,
+        privateKey: formData.privateKey, // Using the correct field name
       };
-
-      console.log('Transaction Data:', transactionData); // Log the request payload
 
       const response = await createTransaction(transactionData);
 
-      console.log('Transaction created:', response);
-
-      // Check if id is null or status is "Invalid private key"
       if (!response.id || response.status === "Invalid private key") {
         toast(toastConfig.error('Invalid private key'));
       } else {
@@ -128,7 +113,7 @@ const CreateTransaction = () => {
                     <SelectContent>
                       {isLoadingWallets ? (
                         <SelectItem value="loading" disabled>Loading wallets...</SelectItem>
-                      ) : wallets.length > 0 ? (
+                      ) : wallets && wallets.length > 0 ? (
                         wallets.map(wallet => (
                           <SelectItem key={wallet.id} value={wallet.id.toString()}>
                             {`${wallet.address.substring(0, 6)}...${wallet.address.substring(38)} (${wallet.balance} ETH)`}
@@ -169,7 +154,7 @@ const CreateTransaction = () => {
                     type="password"
                     id="private_key"
                     name="private_key"
-                    value={formData.private_key}
+                    value={formData.privateKey}
                     onChange={handlePrivateKeyChange}
                     className="bg-white/5 border-white/10 text-white"
                     required

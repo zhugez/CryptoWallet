@@ -28,17 +28,19 @@ class Wallet(Base):
 
     transactions = relationship("Transaction", back_populates="wallet")
 
+
 class Transaction(Base):
-    __tablename__ = 'transactions'
-    
+    __tablename__ = "transactions"
+
     id = Column(String, primary_key=True)
-    wallet_id = Column(Integer, ForeignKey('wallets.id'))  # Changed to Integer to match Wallet.id
+    wallet_id = Column(
+        Integer, ForeignKey("wallets.id")
+    )  # Changed to Integer to match Wallet.id
     from_wallet = Column(String(255), nullable=False)  # Added length constraint
-    recipient = Column(String(255), nullable=False)    # Added length constraint
-    status = Column(String(50), nullable=False)        # Added length constraint
+    recipient = Column(String(255), nullable=False)  # Added length constraint
+    status = Column(String(50), nullable=False)  # Added length constraint
     transaction_type = Column(String(50), nullable=False)  # Added length constraint
     amount = Column(Float, nullable=False)
-    created_at = Column(DateTime, nullable=False)
+    created_at = Column(Integer, nullable=False)
 
     wallet = relationship("Wallet", back_populates="transactions")
-    # Removed duplicate wallet_id column definition

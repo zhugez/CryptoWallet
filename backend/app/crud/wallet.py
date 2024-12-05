@@ -44,7 +44,7 @@ async def generate_ethereum_wallet() -> dict:
         w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
         account = w3.eth.account.create()
         admin_wallet = w3.eth.accounts[0]
-        admin_wallet_priv = "0x95d20a8a0bf1a31ec9cf500b8f0f85dde0d4f18e9ec26fb6fe5e474f9adec7f7"
+        admin_wallet_priv = "0x2b364b0546d34d4f26400e375daf9aec130060dfe4323cbc89751e27488160e2"
         amount = 0.1
         transaction = {
             "to": account.address,

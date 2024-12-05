@@ -52,7 +52,6 @@ pyjwt==2.10.1
 python-dotenv==1.0.1
 python-multipart==0.0.18
 pyunormalize==16.0.0
-pywin32==308
 pyyaml==6.0.2
 regex==2024.11.6
 requests==2.32.3

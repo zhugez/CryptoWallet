@@ -11,7 +11,18 @@ from typing import List, Optional
 from sqlalchemy.orm import selectinload
 
 async def get_transactions(db: AsyncSession, skip: int = 0, limit: int = 10) -> List[Transaction]:
-    return await fetch_all_transactions(db, limit)
+    
+    res =  await fetch_all_transactions(db, limit)
+
+    # Fetch transactions from the database
+
+    stmt = select(Transaction).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    transactions = result.scalars().all()
+    return {
+        "transactions": transactions,
+    }
+
 
 async def fetch_all_transactions(db: AsyncSession, limit: int = 10) -> List[Transaction]:
     try:
@@ -24,7 +35,6 @@ async def fetch_all_transactions(db: AsyncSession, limit: int = 10) -> List[Tran
             
         latest_block = w3.eth.block_number
         transactions = []
-        local_timezone = pytz.timezone('Asia/Ho_Chi_Minh')
         
         stmt = select(Wallet).options(selectinload(Wallet.transactions))
         result = await db.execute(stmt)
@@ -36,28 +46,32 @@ async def fetch_all_transactions(db: AsyncSession, limit: int = 10) -> List[Tran
         for block_number in range(latest_block, max(0, latest_block - limit), -1):
             try:
                 block = w3.eth.get_block(block_number, full_transactions=True)
-                block_time = datetime.fromtimestamp(block['timestamp'], pytz.UTC)
-                local_time = block_time.astimezone(local_timezone)
-
+                block_timestamp = block.timestamp
                 for tx in block.transactions:
                     from_addr = tx['from'].lower()
                     to_addr = tx['to'].lower() if tx['to'] else None
                     
                     wallet = wallets.get(from_addr) or wallets.get(to_addr)
                     if wallet:
-                        transaction = Transaction(
-                            id=tx['hash'].hex(),
-                            wallet_id=wallet.id,
-                            from_wallet=from_addr[:255],
-                            recipient=to_addr[:255] if to_addr else None,
-                            status="SUCCESS",
-                            transaction_type="SEND" if from_addr == wallet.address.lower() else "RECEIVE",
-                            amount=float(w3.from_wei(tx['value'], 'ether')),
-                            created_at=local_time
+                        tx_id = tx['hash'].hex()
+                        # Check if transaction already exists
+                        existing_tx = await db.execute(
+                            select(Transaction).where(Transaction.id == tx_id)
                         )
-                        transactions.append(transaction)
-                        db.add(transaction)
-
+                        if not existing_tx.scalar_one_or_none():
+                            transaction = Transaction(
+                                id=tx_id,
+                                wallet_id=wallet.id,
+                                from_wallet=from_addr[:255],
+                                recipient=to_addr[:255] if to_addr else None,
+                                status="SUCCESS",
+                                transaction_type="SEND" if from_addr == wallet.address.lower() else "RECEIVE",
+                                amount=float(w3.from_wei(tx['value'], 'ether')),
+                                created_at=block_timestamp
+                            )
+                            transactions.append(transaction)
+                            await db.add(transaction)
+                            print(f"Processed transaction {tx_id}")
             except Exception as block_error:
                 print(f"Error processing block {block_number}: {str(block_error)}")
                 continue

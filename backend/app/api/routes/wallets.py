@@ -54,7 +54,6 @@ async def get_wallet_by_id_route(wallet_id: int, db: AsyncSession = Depends(get_
     )
 
 
-
 @router.get("/{wallet_id}/balance", response_model=WalletBalanceResponse)
 async def get_wallet_balance_route(wallet_id: int, db: AsyncSession = Depends(get_db)):
     balance = await get_wallet_balance(db, wallet_id)
