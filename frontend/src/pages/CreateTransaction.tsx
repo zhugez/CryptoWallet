@@ -24,14 +24,10 @@ const CreateTransaction = () => {
     privateKey: '', // Changed from private_key to match the interface
   });
 
-  const { wallets, isLoading: isLoadingWallets, error, fetchWallets } = useWalletStore(
-    (state) => ({
-      wallets: state.wallets,
-      isLoading: state.isLoading,
-      error: state.error,
-      fetchWallets: state.fetchWallets,
-    })
-  );
+  const wallets = useWalletStore((state) => state.wallets);
+  const isLoadingWallets = useWalletStore((state) => state.isLoading);
+  const error = useWalletStore((state) => state.error);
+  const loadWallets = useWalletStore((state) => state.loadWallets);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -39,7 +35,7 @@ const CreateTransaction = () => {
       navigate(PATHS.LOGIN);
       return;
     }
-    fetchWallets();
+    loadWallets();
   }, [navigate]);
 
   useEffect(() => {
