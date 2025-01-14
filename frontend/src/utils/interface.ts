@@ -1,4 +1,3 @@
-
 export interface ILogin {
   email: string
   password: string
@@ -18,12 +17,15 @@ export interface TimeMonth extends Omit<Time, 'day'> { }
 export interface TimeYear extends Omit<Time, 'month' | 'day'> { }
 
 export interface ITransaction {
-  id: number
-  amount: number
-  status: string
-  from: string
-  to: string
-  createdAt: string
+  id: string;
+  wallet_id: number;
+  from_wallet: string;
+  recipient: string;
+  status: string;
+  transaction_type: 'SEND' | 'RECEIVE';
+  amount: number;
+  created_at: number;
+  tx_hash: string;
 }
 export interface IWallet {
   id: number;

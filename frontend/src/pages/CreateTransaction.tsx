@@ -19,9 +19,9 @@ const CreateTransaction = () => {
   const [formData, setFormData] = useState({
     wallet_id: '',
     amount: '',
-    transaction_type: 'send' as const, // Type assertion to match the required type
+    transaction_type: 'send' as const,
+    private_key: '',
     recipient: '',
-    privateKey: '', // Changed from private_key to match the interface
   });
 
   const wallets = useWalletStore((state) => state.wallets);
@@ -51,34 +51,32 @@ const CreateTransaction = () => {
 
   const handlePrivateKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setFormData(prev => ({ ...prev, privateKey: value }));
+    setFormData(prev => ({ ...prev, private_key: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const user_id = 1; // Get this from your auth context
       const transactionData = {
-        user_id,
         wallet_id: parseInt(formData.wallet_id),
         amount: parseFloat(formData.amount),
         transaction_type: formData.transaction_type,
+        private_key: formData.private_key,
         recipient: formData.recipient,
-        privateKey: formData.privateKey, // Using the correct field name
       };
 
-      const response = await createTransaction(transactionData);
+      console.log('Submitting transaction:', transactionData);
 
-      if (!response.id || response.status === "Invalid private key") {
-        toast(toastConfig.error('Invalid private key'));
-      } else {
-        toast(toastConfig.success('Transaction created successfully'));
-        navigate(PATHS.TRANSACTION);
-      }
+      const response = await createTransaction(transactionData);
+      console.log('Transaction response:', response);
+
+      toast(toastConfig.success('Transaction created successfully'));
+      navigate(PATHS.TRANSACTION);
     } catch (error: any) {
       console.error('Failed to create transaction:', error);
-      toast(toastConfig.error(error.response?.data?.message || 'Failed to create transaction'));
+      const errorMessage = error.response?.data?.detail || 'Failed to create transaction';
+      toast(toastConfig.error(errorMessage));
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +148,7 @@ const CreateTransaction = () => {
                     type="password"
                     id="private_key"
                     name="private_key"
-                    value={formData.privateKey}
+                    value={formData.private_key}
                     onChange={handlePrivateKeyChange}
                     className="bg-white/5 border-white/10 text-white"
                     required

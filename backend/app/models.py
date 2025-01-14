@@ -33,14 +33,13 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(String, primary_key=True)
-    wallet_id = Column(
-        Integer, ForeignKey("wallets.id")
-    )  # Changed to Integer to match Wallet.id
-    from_wallet = Column(String(255), nullable=False)  # Added length constraint
-    recipient = Column(String(255), nullable=False)  # Added length constraint
-    status = Column(String(50), nullable=False)  # Added length constraint
-    transaction_type = Column(String(50), nullable=False)  # Added length constraint
+    wallet_id = Column(Integer, ForeignKey("wallets.id"))
+    from_wallet = Column(String(255), nullable=False)
+    recipient = Column(String(255), nullable=True)
+    status = Column(String(50), nullable=False)
+    transaction_type = Column(String(50), nullable=False)
     amount = Column(Float, nullable=False)
     created_at = Column(Integer, nullable=False)
+    tx_hash = Column(String(255), nullable=True)
 
     wallet = relationship("Wallet", back_populates="transactions")

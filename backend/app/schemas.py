@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 
 # Schemas cho Người dùng
@@ -74,42 +74,44 @@ class DeleteWalletResponse(BaseModel):
 
 
 class TransactionType(str, Enum):
-    SEND = "send"
-    RECEIVE = "receive"
+    send = "send"
+    receive = "receive"
+
+class TransactionBase(BaseModel):
+    id: Optional[int]  # Optional to allow auto-increment by the database
+    wallet_id: int
+    from_wallet: str
+    recipient: str
+    status: str
+    transaction_type: str
+    amount: float
+    created_at: int
+    tx_hash: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class TransactionCreate(BaseModel):
     wallet_id: int
     amount: float
     transaction_type: TransactionType
     private_key: str
-    recipient: str | None = None
+    recipient: str
 
-    class Config:
-        from_attributes = True
-
+    model_config = {"from_attributes": True}
 
 class TransactionResponse(BaseModel):
-    id: int | None  # Make id optional
-    wallet_id: int | None  # Make wallet_id optional
-    amount: float | None  # Make amount optional
-    transaction_type: str | None  # Make transaction_type optional
-    status: str  # Make status optional
-    recipient: str | None  # Keep recipient optional
-    created_at: datetime | None  # Make created_at optional
+    id: str
+    wallet_id: int
+    from_wallet: str
+    recipient: str
+    status: str
+    transaction_type: str
+    amount: float
+    created_at: int
+    tx_hash: str
 
-    class Config:
-        from_attributes = True
-
-# class TransactionResponse(BaseModel):
-#     id: int
-#     wallet_id: int
-#     amount: float
-#     transaction_type: str  # Change to str since we store string in DB
-#     status: str
-#     recipient: Optional[str]
-#     created_at: datetime
-
-#     class Config:
-#         from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class TransferCreate(BaseModel):

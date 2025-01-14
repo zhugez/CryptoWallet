@@ -31,6 +31,7 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [walletPassword, setWalletPassword] = useState('');
 
   const validateForm = () => {
     const newErrors: Partial<RegisterForm> = {};
@@ -103,6 +104,7 @@ const Register = () => {
             window.location.href = PATHS.LOGIN;
           }, 2000);
         });
+        localStorage.setItem('wallet_password', walletPassword);
       } else {
         setSuccess(false);
         toast({
@@ -321,6 +323,17 @@ const Register = () => {
                     </motion.span>
                   )}
                 </div>
+              </div>
+              <div>
+                <Label className="text-gray-300">Wallet Password</Label>
+                <input
+                  type="password"
+                  value={walletPassword}
+                  onChange={(e) => setWalletPassword(e.target.value)}
+                  placeholder="Enter password for recovery wallet private key"
+                  className="w-full p-2 mb-4 bg-[#2D2E3D] text-white rounded border border-gray-600"
+                  required
+                />
               </div>
               <Button
                 type="submit"
